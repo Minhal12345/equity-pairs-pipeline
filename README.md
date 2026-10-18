@@ -51,17 +51,17 @@ ingest.py → reconcile.py → cointegration.py → signals.py → backtest.py �
 
 ![Spread Z-Score PEP/YUM](data/output/charts/spread_zscore_PEP_YUM.png)
 
-*PEP/YUM spread z-score (Sharpe 1.60) with entry (±2) and stop-loss (±3) thresholds.*
+*PEP/YUM spread z-score (Sharpe 1.56) with entry (±2) and stop-loss (±3) thresholds.*
 
 ![Spread Z-Score V/MA](data/output/charts/spread_zscore_V_MA.png)
 
-*V/MA spread z-score (Sharpe 1.23).*
+*V/MA spread z-score (Sharpe 1.04).*
 
 ### P&L Curves
 
 ![P&L PEP/YUM](data/output/charts/pnl_curve_PEP_YUM.png)
 
-*PEP/YUM cumulative P&L — 203% total return.*
+*PEP/YUM cumulative P&L — 122% total return.*
 
 ![Portfolio P&L](data/output/charts/portfolio_pnl.png)
 
@@ -71,18 +71,18 @@ ingest.py → reconcile.py → cointegration.py → signals.py → backtest.py �
 
 | Pair | Total Return % | Sharpe | Max DD % | Trades | Win Rate % |
 |------|---------------|--------|----------|--------|------------|
-| PEP/YUM | 203.1 | 1.60 | -17.3 | 19 | 78.9 |
-| PEP/COST | 65.5 | 1.27 | -16.4 | 17 | 76.5 |
-| V/MA | 358.2 | 1.23 | -35.2 | 17 | 82.4 |
-| PEP/WMT | 56.9 | 1.18 | -17.5 | 15 | 66.7 |
-| PEP/MCD | 113.5 | 1.15 | -24.6 | 19 | 68.4 |
-| MSFT/META | 79.6 | 0.66 | -36.8 | 14 | 71.4 |
-| JNJ/MRK | 23.4 | 0.62 | -11.5 | 16 | 62.5 |
-| GOOGL/AMZN | -49.1 | 0.60 | -88.3 | 16 | 62.5 |
-| JNJ/PFE | 16.3 | 0.46 | -13.1 | 14 | 57.1 |
-| **Portfolio (EW)** | **96.4** | **1.51** | **-14.8** | **147** | **69.6** |
+| PEP/YUM | 122.1 | 1.56 | -13.0 | 17 | 64.7 |
+| PEP/COST | 42.0 | 1.06 | -15.2 | 16 | 68.8 |
+| V/MA | 354.0 | 1.04 | -47.0 | 15 | 73.3 |
+| PEP/WMT | 37.3 | 1.00 | -14.9 | 13 | 69.2 |
+| PEP/MCD | 55.9 | 0.88 | -19.7 | 16 | 75.0 |
+| MSFT/META | 50.7 | 0.64 | -23.8 | 12 | 50.0 |
+| GOOGL/AMZN | 36.0 | 0.55 | -62.0 | 15 | 46.7 |
+| JNJ/MRK | 17.4 | 0.54 | -11.2 | 14 | 42.9 |
+| JNJ/PFE | 11.2 | 0.38 | -13.7 | 13 | 30.8 |
+| **Portfolio (EW)** | **102.7** | **1.75** | **-11.0** | **131** | **57.9** |
 
-9 of 54 pairs showed raw significance at p < 0.05. After FDR correction, 0 survived. Out-of-sample Sharpe degraded from 1.44 to 0.15 — the in-sample edge does not hold up under standard statistical rigor.
+9 of 54 pairs showed raw significance at p < 0.05. After FDR correction, 0 survived. Out-of-sample Sharpe degraded from 1.44 (in-sample) to 0.15 — the in-sample edge does not hold up under standard statistical rigor.
 
 ## Data
 

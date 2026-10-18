@@ -34,7 +34,7 @@
 
 2. **In-sample bias**: Cointegration tests and hedge ratios are estimated on the same data used for backtesting. The out-of-sample validation in Section 6 confirms this overstates performance significantly.
 
-3. **No transaction costs**: The backtest assumes zero costs. At 10 bps round-trip, total costs for a pair generating ~16 trades over 3 years would be ~1.6% of notional — negligible for top performers but material for marginal pairs like JNJ/PFE (16.3% return).
+3. **No transaction costs**: The backtest assumes zero costs. At 10 bps round-trip, total costs for a pair generating ~16 trades over 3 years would be ~1.6% of notional — negligible for top performers but material for marginal pairs like JNJ/PFE (11.2% return).
 
 4. **Static hedge ratios**: Hedge ratios are estimated once over the full sample and never re-estimated. In production, ratios would need rolling re-estimation, which would reduce returns.
 
@@ -138,19 +138,19 @@ All 9 raw-significant pairs fall in a narrow range: **16.5 to 29.3 days**, with 
 
 | Bucket | Pairs | Avg Sharpe | Avg Win Rate | Avg Return |
 |--------|-------|-----------|-------------|------------|
-| <20 days | MSFT/META, V/MA, PEP/MCD | 1.01 | 74.1% | 183.7% |
-| 20–25 days | PEP/YUM, GOOGL/AMZN, JNJ/MRK, JNJ/PFE | 0.82 | 65.3% | 48.4% |
-| >25 days | PEP/WMT, PEP/COST | 1.23 | 71.6% | 61.2% |
+| <20 days | MSFT/META, V/MA, PEP/MCD | 0.85 | 66.1% | 153.5% |
+| 20–25 days | PEP/YUM, GOOGL/AMZN, JNJ/MRK, JNJ/PFE | 0.76 | 46.3% | 46.7% |
+| >25 days | PEP/WMT, PEP/COST | 1.03 | 69.0% | 39.7% |
 
 ![Half-Life Analysis](data/output/charts/investigation/half_life_analysis.png)
 
 ### Interpretation
 
-The <20-day bucket produced the highest average returns (183.7%), driven by V/MA's outsized 358% return. The >25-day bucket had the highest average Sharpe (1.23). The relationship between half-life and Sharpe is non-monotonic in this small sample, but drawing conclusions from 9 pairs across 3 buckets would be over-interpreting the data.
+The <20-day bucket produced the highest average returns (153.5%), driven by V/MA's outsized 354% return. The >25-day bucket had the highest average Sharpe (1.03). The relationship between half-life and Sharpe is non-monotonic in this small sample, but drawing conclusions from 9 pairs across 3 buckets would be over-interpreting the data.
 
 ### Transaction cost sensitivity
 
-At our z-score thresholds (entry ±2, exit at sign change), each pair generates 14–19 round-trip trades over 3 years. With a conservative 10 bps round-trip cost assumption, total transaction costs would be 1.4–1.9% of notional — negligible relative to returns for winners but meaningful for marginal pairs like JNJ/PFE (16.3% return, ~1.4% in costs).
+At our z-score thresholds (entry ±2, exit at sign change), each pair generates 12–17 round-trip trades over 3 years. With a conservative 10 bps round-trip cost assumption, total transaction costs would be 1.2–1.7% of notional — negligible relative to returns for winners but meaningful for marginal pairs like JNJ/PFE (11.2% return, ~1.3% in costs).
 
 ---
 
