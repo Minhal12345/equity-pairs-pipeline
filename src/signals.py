@@ -83,20 +83,28 @@ def generate_signals(
         signal[zscore < -Z_STOPLOSS] = 0
         signal[zscore >  Z_STOPLOSS] = 0
 
-        # Walk forward to compute position (need state machine)
+        # Walk forward to compute position (state machine with stop-loss cooldown)
+        # After a stop-out, require z-score to cross back through zero before
+        # allowing a new entry — prevents immediate re-entry at extreme levels.
         pos = 0
+        locked_out = False
         positions = []
         for i, (z, s) in enumerate(zip(zscore, signal)):
             if np.isnan(z):
                 positions.append(0)
                 continue
+            # Clear lockout once z-score crosses back through zero
+            if locked_out and abs(z) < Z_ENTRY:
+                locked_out = False
             if pos == 0:
-                # Not in a trade — enter on signal
-                pos = s
+                # Not in a trade — enter on signal (unless locked out)
+                if not locked_out:
+                    pos = s
             else:
                 # In a trade — check exit or stop-loss
                 if abs(z) >= Z_STOPLOSS:
                     pos = 0
+                    locked_out = True  # prevent immediate re-entry
                 elif (pos == 1 and z >= Z_EXIT) or (pos == -1 and z <= Z_EXIT):
                     pos = 0
             positions.append(pos)
@@ -135,6 +143,9 @@ def main():
         elif "p_raw" in coint_df.columns:
             coint_df = coint_df[coint_df["p_raw"] < 0.05].copy()
     sig_df   = generate_signals(closes, coint_df)
+    if sig_df.empty:
+        print("\nNo signals generated — no cointegrated pairs found.")
+        return
     print(f"\nGenerated signals for {sig_df['pair'].nunique()} pairs, {len(sig_df)} total rows")
 
 
