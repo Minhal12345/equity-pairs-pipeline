@@ -5,7 +5,7 @@ Simulates trading each cointegrated pair based on z-score signals.
 Equal notional per trade, no transaction costs (noted in README).
 
 Metrics per pair: total return, annualised Sharpe, max drawdown, trade count, win rate.
-Portfolio-level: equal-weight across all pairs.
+Portfolio-level: equal-weight daily returns across all pairs.
 
 Output:
     data/output/backtest_results.csv
@@ -50,39 +50,38 @@ def backtest_pair(pair_df: pd.DataFrame) -> dict:
     pair_df["pnl"] = pair_df["position"].shift(1) * pair_df["spread_return"]
     pair_df["pnl"] = pair_df["pnl"].fillna(0)
 
-    # Normalise P&L by initial spread notional for return calculation
-    initial_notional = pair_df["spread"].abs().iloc[0]
-    if initial_notional == 0:
-        initial_notional = 1.0
-    pair_df["daily_return"] = pair_df["pnl"] / initial_notional
+    # Normalise P&L by median absolute spread (stable scale).
+    # Using initial spread value is fragile because mean-reverting spreads
+    # can start near zero, inflating all subsequent returns.
+    median_abs_spread = pair_df["spread"].abs().median()
+    if median_abs_spread == 0:
+        median_abs_spread = 1.0
+    pair_df["daily_return"] = pair_df["pnl"] / median_abs_spread
     pair_df["cum_return"]   = (1 + pair_df["daily_return"]).cumprod()
 
     total_return = float(pair_df["cum_return"].iloc[-1] - 1)
     sharpe       = _annualised_sharpe(pair_df["daily_return"])
     max_dd       = _max_drawdown(pair_df["cum_return"])
 
-    # Trade counting: a trade starts when position goes from 0 to nonzero
+    # Trade counting using cumulative-sum trade IDs.
+    # A trade starts when position goes from 0 to nonzero.
     pos = pair_df["position"]
     trade_starts = ((pos != 0) & (pos.shift(1).fillna(0) == 0))
-    trade_ends   = ((pos == 0) & (pos.shift(1).fillna(0) != 0))
-    n_trades     = int(trade_starts.sum())
+    trade_ids = trade_starts.cumsum()
+    trade_ids[pos == 0] = 0  # non-trade bars get id 0
 
-    # Win rate: a trade is a "win" if cumulative P&L during the trade is positive
-    wins = 0
-    in_trade = False
-    trade_pnl = 0.0
-    for _, r in pair_df.iterrows():
-        if not in_trade and r["position"] != 0:
-            in_trade = True
-            trade_pnl = 0.0
-        if in_trade:
-            trade_pnl += r["pnl"]
-            if r["position"] == 0:
-                if trade_pnl > 0:
-                    wins += 1
-                in_trade = False
+    n_trades = int(trade_starts.sum())
 
-    win_rate = wins / n_trades if n_trades > 0 else 0.0
+    # Win rate via groupby on trade IDs.
+    # Open trades at the end of the series are force-closed at the final bar:
+    # their realized P&L up to that point is counted.
+    if n_trades > 0:
+        trade_pnls = pair_df.loc[trade_ids > 0].groupby(trade_ids[trade_ids > 0])["pnl"].sum()
+        wins = int((trade_pnls > 0).sum())
+        win_rate = wins / n_trades
+    else:
+        wins = 0
+        win_rate = 0.0
 
     return {
         "pair":         pair_name,
@@ -91,7 +90,8 @@ def backtest_pair(pair_df: pd.DataFrame) -> dict:
         "max_drawdown":  round(max_dd * 100, 2),
         "n_trades":      n_trades,
         "win_rate":      round(win_rate * 100, 1),
-        "cum_return_series": pair_df[["date", "cum_return"]].copy(),
+        "daily_return_series": pair_df[["date", "daily_return"]].copy(),
+        "cum_return_series":   pair_df[["date", "cum_return"]].copy(),
     }
 
 
@@ -103,16 +103,16 @@ def run_backtest() -> tuple[pd.DataFrame, pd.DataFrame]:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
     sig_df = pd.read_parquet(PROC_DIR / "signals.parquet")
-    pairs  = sig_df["pair"].unique()
-    log.info("Backtesting %d pairs …", len(pairs))
+    log.info("Backtesting %d pairs …", sig_df["pair"].nunique())
 
-    results    = []
-    cum_series = {}
+    results       = []
+    daily_returns = {}
 
-    for pair in pairs:
-        pair_data = sig_df[sig_df["pair"] == pair]
-        metrics   = backtest_pair(pair_data)
-        cum_series[pair] = metrics.pop("cum_return_series").set_index("date")["cum_return"]
+    for pair, pair_data in sig_df.groupby("pair"):
+        metrics = backtest_pair(pair_data)
+        daily_ret = metrics.pop("daily_return_series").set_index("date")["daily_return"]
+        daily_returns[pair] = daily_ret
+        metrics.pop("cum_return_series")
         results.append(metrics)
         log.info("  %s  return=%.1f%%  sharpe=%.2f  dd=%.1f%%  trades=%d  win=%.0f%%",
                  pair, metrics["total_return"], metrics["sharpe"],
@@ -120,10 +120,13 @@ def run_backtest() -> tuple[pd.DataFrame, pd.DataFrame]:
 
     metrics_df = pd.DataFrame(results)
 
-    # Portfolio-level: equal-weight across pairs
-    cum_df = pd.DataFrame(cum_series)
-    portfolio_cum = cum_df.mean(axis=1)
-    portfolio_daily = portfolio_cum.pct_change().fillna(0)
+    # Portfolio-level: equal-weight daily returns across all pairs.
+    # Align on the full date index; compute nanmean across pairs each day,
+    # then compound. This avoids the bug where averaging cumulative returns
+    # and taking pct_change creates spurious returns from composition changes.
+    ret_df = pd.DataFrame(daily_returns)
+    portfolio_daily = ret_df.mean(axis=1)
+    portfolio_cum = (1 + portfolio_daily).cumprod()
 
     port_row = {
         "pair":         "PORTFOLIO (EW)",

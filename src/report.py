@@ -221,7 +221,7 @@ def print_terminal_report() -> None:
             bt_df[["pair", "total_return", "sharpe", "max_drawdown", "n_trades", "win_rate"]].values.tolist(),
             headers=["Pair", "Total Return %", "Sharpe", "Max DD %", "Trades", "Win Rate %"],
             tablefmt="simple_outline",
-            floatfmt=(".2f", ".3f", ".2f", "d", ".1f"),
+            floatfmt=(".2f", ".3f", ".2f", ".0f", ".1f"),
         ))
 
 
