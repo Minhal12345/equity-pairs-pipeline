@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+.env
+data/raw/
+data/processed/
+data/output/*
+!data/output/charts/
+*.egg-info/
+.pytest_cache/
+venv/
+
+# Interview prep (personal, not for repo)
+docs/interview_prep/
+
+# macOS
+.DS_Store
