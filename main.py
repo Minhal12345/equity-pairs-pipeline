@@ -10,7 +10,8 @@ Orchestrates the full equity pairs trading pipeline:
     6. Generate charts and terminal report
 
 Usage:
-    python main.py [--skip-av]  # skip Alpha Vantage ingestion
+    python main.py [--skip-av]          # skip Alpha Vantage ingestion
+    python main.py [--skip-ingest]      # skip all ingestion (use existing raw data)
 """
 
 import argparse
@@ -36,6 +37,8 @@ from report import generate_all_charts, print_terminal_report
 def main():
     parser = argparse.ArgumentParser(description="Equity Pairs Trading Pipeline")
     parser.add_argument("--skip-av", action="store_true", help="Skip Alpha Vantage ingestion")
+    parser.add_argument("--skip-ingest", action="store_true",
+                        help="Skip all ingestion — use existing raw data")
     parser.add_argument("--av-key", default=None, help="Alpha Vantage API key")
     args = parser.parse_args()
 
@@ -45,13 +48,16 @@ def main():
     print("\n" + "=" * 72)
     print("  STEP 1 — DATA INGESTION")
     print("=" * 72)
-    ingest_yfinance()
-    if not args.skip_av and args.av_key:
-        ingest_alphavantage(api_key=args.av_key)
-    elif args.skip_av:
-        log.info("Skipping Alpha Vantage ingestion (--skip-av)")
+    if args.skip_ingest:
+        log.info("Skipping ingestion (--skip-ingest) — using existing raw data")
     else:
-        log.info("Skipping Alpha Vantage (no --av-key provided)")
+        ingest_yfinance()
+        if not args.skip_av and args.av_key:
+            ingest_alphavantage(api_key=args.av_key)
+        elif args.skip_av:
+            log.info("Skipping Alpha Vantage ingestion (--skip-av)")
+        else:
+            log.info("Skipping Alpha Vantage (no --av-key provided)")
 
     # Step 2: Reconcile
     print("\n" + "=" * 72)
