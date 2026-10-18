@@ -121,10 +121,11 @@ def plot_portfolio_pnl(sig_df: pd.DataFrame, out_dir: Path) -> None:
         data["spread_return"] = data["spread"].diff()
         data["pnl"] = data["position"].shift(1) * data["spread_return"]
         data["pnl"] = data["pnl"].fillna(0)
-        initial = data["spread"].abs().iloc[0]
-        if initial == 0:
-            initial = 1.0
-        data["daily_return"] = data["pnl"] / initial
+        # Normalize by median absolute spread (matches backtest.py logic)
+        median_abs = data["spread"].abs().median()
+        if median_abs == 0:
+            median_abs = 1.0
+        data["daily_return"] = data["pnl"] / median_abs
         pair_pnls[pair] = data.set_index("date")["daily_return"]
 
     port_df = pd.DataFrame(pair_pnls)
@@ -206,7 +207,7 @@ def print_terminal_report() -> None:
         print("  COINTEGRATION RESULTS")
         print("=" * 72)
         print(tabulate(
-            coint_df[["pair", "p_value", "hedge_ratio", "half_life"]].values.tolist(),
+            coint_df[["pair", "p_raw", "hedge_ratio", "half_life"]].values.tolist(),
             headers=["Pair", "p-value", "Hedge Ratio", "Half-Life (days)"],
             tablefmt="simple_outline",
             floatfmt=(".6f", ".4f", ".1f"),
